@@ -12,7 +12,11 @@ const (
 	timeFormatLayout = time.RFC3339
 )
 
-func formatTime(t time.Time, utc bool) string {
+func formatTime(t time.Time, unixFormat bool, utc bool) string {
+	if unixFormat {
+		return strconv.Itoa(int(t.Unix()))
+	}
+
 	if utc {
 		t = t.UTC()
 	}
@@ -40,12 +44,7 @@ func convertTime(arg string, utc bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	if isUnix {
-		return formatTime(t, utc), nil
-	}
-
-	return strconv.Itoa(int(t.Unix())), nil
+	return formatTime(t, !isUnix, utc), nil
 }
 
 func addTimes(times []string) (time.Time, error) {
@@ -70,17 +69,18 @@ func main() {
 	var (
 		requestCurrentTime bool
 		localTimeZone      bool
+		unixTimeFormat     bool
 		requestAddTime     bool
 	)
 
 	flag.BoolVar(&requestCurrentTime, "c", false, "request current time")
 	flag.BoolVar(&localTimeZone, "l", false, "use local timezone")
-	flag.BoolVar(&requestAddTime, "a", false, "add time in first argument duration in second argument")
+	flag.BoolVar(&unixTimeFormat, "u", false, "print time in unix format")
+	flag.BoolVar(&requestAddTime, "a", false, "add time in first argument with duration in second argument")
 	flag.Parse()
 
 	if requestCurrentTime {
-		t := time.Now()
-		fmt.Printf("%d\n%s\n", t.Unix(), formatTime(t, !localTimeZone))
+		fmt.Println(formatTime(time.Now(), unixTimeFormat, !localTimeZone))
 		return
 	}
 
@@ -91,7 +91,7 @@ func main() {
 			return
 		}
 
-		fmt.Println(formatTime(t, !localTimeZone))
+		fmt.Println(formatTime(t, unixTimeFormat, !localTimeZone))
 		return
 	}
 
