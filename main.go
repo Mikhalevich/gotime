@@ -23,6 +23,13 @@ func formatTime(t time.Time, unixFormat bool, utc bool) string {
 	return t.Format(timeFormatLayout)
 }
 
+func formatDuration(d time.Duration, unixFormat bool) string {
+	if unixFormat {
+		return strconv.Itoa(int(d.Seconds()))
+	}
+	return d.String()
+}
+
 // makeTime converts argument into time struct
 // returns time struct, is argument in unix format flag, error
 func makeTime(arg string) (time.Time, bool, error) {
@@ -65,18 +72,38 @@ func addTimes(times []string) (time.Time, error) {
 	return t.Add(time.Duration(d) * time.Second), nil
 }
 
+func diffTimes(times []string) (time.Duration, error) {
+	if len(times) != 2 {
+		return 0, fmt.Errorf("invalid arguents: %s", strings.Join(times, " "))
+	}
+
+	startTime, _, err := makeTime(times[0])
+	if err != nil {
+		return 0, fmt.Errorf("invalid time in first argument: %w", err)
+	}
+
+	finishTime, _, err := makeTime(times[1])
+	if err != nil {
+		return 0, fmt.Errorf("invalid time in second argument: %w", err)
+	}
+
+	return startTime.Sub(finishTime), nil
+}
+
 func main() {
 	var (
 		requestCurrentTime bool
 		localTimeZone      bool
 		unixTimeFormat     bool
 		requestAddTime     bool
+		requestDiffTime    bool
 	)
 
 	flag.BoolVar(&requestCurrentTime, "c", false, "request current time")
 	flag.BoolVar(&localTimeZone, "l", false, "use local timezone")
 	flag.BoolVar(&unixTimeFormat, "u", false, "print time in unix format")
 	flag.BoolVar(&requestAddTime, "a", false, "add time in first argument with duration in second argument")
+	flag.BoolVar(&requestDiffTime, "d", false, "calculate time difference")
 	flag.Parse()
 
 	if requestCurrentTime {
@@ -92,6 +119,17 @@ func main() {
 		}
 
 		fmt.Println(formatTime(t, unixTimeFormat, !localTimeZone))
+		return
+	}
+
+	if requestDiffTime {
+		diff, err := diffTimes(flag.Args())
+		if err != nil {
+			fmt.Printf("error: %s\n", err)
+			return
+		}
+
+		fmt.Println(formatDuration(diff, unixTimeFormat))
 		return
 	}
 
