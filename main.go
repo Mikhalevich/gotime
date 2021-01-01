@@ -133,6 +133,11 @@ func main() {
 		return
 	}
 
+	if len(flag.Args()) <= 0 {
+		flag.Usage()
+		return
+	}
+
 	for _, arg := range flag.Args() {
 		t, err := convertTime(arg, !localTimeZone)
 		if err != nil {
